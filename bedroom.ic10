@@ -1,0 +1,57 @@
+#Bedroom monitoring
+alias tanks r0
+alias acoutput r1
+alias acinput r2
+alias floutput r3
+alias flinput r4
+alias compare r5
+alias temp r6
+alias mix r15
+alias lig r14
+alias atm r13
+alias flt r12
+
+#Define hashes
+define Light HASH("StructureFlashingLight")
+define Tank HASH("StructureGasTankStorage")
+define Mixer HASH("StructureGasMixer")
+define Filter HASH("StructureFiltration")
+define AC HASH("StructureAirConditioner")
+define Heater HASH("StructurePipeHeater")
+
+Start:
+lb tanks Tank Pressure 2 #Min
+lb acinput AC PressureInput 3
+lb acoutput AC PressureOutput 3
+lb floutput Filter PressureOutput 3
+lb flinput Filter PressureInput 3
+lb temp AC TemperatureOutput2 3
+
+#Light on if 1+ tanks empty
+slez lig tanks
+
+#Mixer on if tanks pressurized and acoutput < 200
+sle mix acinput 200
+sgtz compare tanks
+and mix mix compare
+
+#Push all the into the pre-AC pipe, which has BPR
+
+#AC on if ac output < 1000, bpr for safety
+sle atm acoutput 1000
+
+#Filter on output < 1000 OR input > 2000
+sle flt floutput 1000
+sge compare flinput 2000 #for safety
+or flt flt compare
+
+#Turn on pipe heater if needed
+sle temp temp 190
+
+sb Mixer On mix
+sb Light On lig
+sb AC On atm
+sb Filter On flt
+sb Heater On temp
+sleep 2
+j Start

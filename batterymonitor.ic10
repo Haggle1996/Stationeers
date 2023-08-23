@@ -1,0 +1,61 @@
+#Label registers
+alias BatteryRatio r0 #Average battery ratio
+alias BatteryPowerActual r1 #Outgoing power
+alias BatteryCharge r2 #Total battery Charge
+alias BatteryMaximum r3 #Total battery capacity
+alias BatteryPowerPotential r4 #Incoming Power
+alias Runtime r5 #Run time in min/sec
+alias ChargeTime r6 #Charge time in min/sec
+alias Flow r7 #Difference between Actual/Potential
+
+define Batt HASH("StructureBattery")
+define LED HASH("StructureConsoleLED5")
+
+#Set display modes
+sbn LED HASH("BatteryRatio") Mode 1
+sbn LED HASH("BatteryPowerActual") Mode 2
+sbn LED HASH("BatteryFlow") Mode 2
+
+Start:
+#Get data
+lb BatteryRatio Batt Ratio 0
+lb BatteryPowerActual Batt PowerActual 0
+lb BatteryCharge Batt Charge 1
+lb BatteryMaximum Batt Maximum 1
+lb BatteryPowerPotential Batt PowerPotential 0
+
+#Runtime
+mul Runtime BatteryPowerActual 2 #whole second
+div Runtime BatteryCharge Runtime
+div Runtime Runtime 0.6 #shift 2, round, move back
+round Runtime Runtime
+div Runtime Runtime 100
+
+#Flow
+sub Flow BatteryPowerPotential BatteryPowerActual
+blez Flow Zero #only calc if +power
+
+#ChargeTime
+sub ChargeTime BatteryMaximum BatteryCharge #power needed
+blez ChargeTime Zero
+s db Setting ChargeTime
+mul r15 Flow 2 #whole second
+div ChargeTime ChargeTime r15 #secs to charge
+div ChargeTime ChargeTime 0.6
+round ChargeTime ChargeTime
+div ChargeTime ChargeTime 100
+j Write
+
+Zero:
+move Flow 0
+move ChargeTime 0
+
+Write:
+sbn LED HASH("BatteryRatio") Setting BatteryRatio
+sbn LED HASH("BatteryPowerActual") Setting BatteryPowerActual
+sbn LED HASH("BatteryRuntime") Setting Runtime
+sbn LED HASH("BatteryChargeTime") Setting ChargeTime
+sbn LED HASH("BatteryFlow") Setting Flow
+yield
+yield
+j Start

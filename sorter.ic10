@@ -1,0 +1,74 @@
+alias aDevice r0
+alias hasItem r1
+alias isSorted r2
+alias aHash r14
+alias aJump r15
+
+define SPLIT 163728359
+define IRON HASH("ItemIronOre")
+define COPPER HASH("ItemCopperOre")
+define GOLD HASH("ItemGoldOre")
+define SILICON HASH("ItemSiliconOre")
+
+move aDevice 0
+
+InitDeviceLoop:
+bdseal dr0 InitSorters #branch if device exists
+
+Main:
+yield
+move aDevice 0
+jal SorterLoop
+j Main
+
+InitSorters:
+s dr0 Setting 0
+s dr0 SettingOutput 0
+s dr0 Mode 0
+s dr0 On 0
+add aDevice aDevice 1
+j InitDeviceLoop
+
+SorterLoop:
+move aJump ra
+InnerLoop:
+ls hasItem dr0 0 Occupied
+bgtzal hasItem Sort #something to sort
+s dr0 Mode isSorted
+s dr0 On hasItem
+add aDevice aDevice 1
+bdns dr0 aJump
+j InnerLoop
+
+Sort:
+ls aHash dr0 0 OccupantHash
+#s db Setting aHash
+beq aDevice 0 Sort0
+beq aDevice 1 Sort1
+beq aDevice 2 Sort2
+beq aDevice 3 Sort3
+#beq aDevice 4 Sort4
+#beq aDevice 5 Sort5
+j ra
+
+Sort0:
+seq isSorted aHash IRON
+j ra
+
+Sort1:
+seq isSorted aHash COPPER
+j ra
+
+Sort2:
+seq isSorted aHash GOLD
+j ra
+
+Sort3:
+seq isSorted aHash SILICON
+j ra
+
+Sort4:
+j ra
+
+Sort5:
+j ra
