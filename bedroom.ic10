@@ -36,13 +36,14 @@ sgtz compare tanks
 and mix mix compare
 
 #Push all the into the pre-AC pipe, which has BPR
+#Mind pressure differential for AC/filter
 
-#AC on if ac output < 1000, bpr for safety
-sle atm acoutput 1000
+#AC on if ac output < 2000, bpr for safety
+sle atm acoutput 2000
 
-#Filter on output < 1000 OR input > 2000
+#Filter on output < 1000 OR input > 3000
 sle flt floutput 1000
-sge compare flinput 2000 #for safety
+sge compare flinput 3000 #for safety
 or flt flt compare
 
 #Turn on pipe heater if needed

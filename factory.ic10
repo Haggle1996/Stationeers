@@ -1,0 +1,62 @@
+alias Crafter d0
+alias Stacker d1
+alias Switch d2 #Controls auto-off
+alias LEDCount d3
+alias LEDCrafted d4
+
+alias IsOn r0
+alias ItemCount r1
+alias ItemCrafted r2
+alias IsActive r3
+alias IsAutoOn r4
+alias IsOpen r5
+alias DoneCrafting r5
+
+fMain:
+yield
+# load data
+l IsOn Crafter On
+l IsActive Crafter Activate
+l ItemCount Stacker Setting
+l ItemCrafted Stacker ImportCount
+l IsOpen Crafter Open
+
+jal fCheckAutoOff
+jal fToggleDevices
+jal fCheckOpen
+jal fCheckCraft
+j fMain
+
+fCheckAutoOff:
+bdns Switch ra #If switch missing, skip
+l IsAutoOn Switch Setting
+beqz IsAutoOn ra #If switch off, skip
+beqz DoneCrafting ra #If not done crafting, skip
+move DoneCrafting 0 #reset for next run
+s Crafter On 0
+j ra
+
+fToggleDevices:
+s Stacker On IsOn
+brdns LEDCount 3
+s LEDCount On IsOn
+s LEDCount Setting ItemCount
+brdns LEDCrafted 3
+s LEDCrafted On IsOn
+s LEDCrafted Setting ItemCrafted
+j ra
+
+fCheckOpen:
+beqz IsOpen ra
+s Crafter Activate 0
+s Stacker ClearMemory 1
+j ra
+
+fCheckCraft:
+blt ItemCrafted ItemCount ra #exit if still crafting
+#done crafting
+s Crafter Activate 0 #turn off crafter
+s Stacker ClearMemory 1 #clear export count
+s Stacker Activate 1  #eject stacker contents
+move DoneCrafting 1
+j ra
