@@ -10,7 +10,7 @@ alias ItemCrafted r2
 alias IsActive r3
 alias IsAutoOn r4
 alias IsOpen r5
-alias DoneCrafting r5
+alias DoneCrafting r6
 
 fMain:
 yield
