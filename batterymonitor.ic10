@@ -15,6 +15,7 @@ define LED HASH("StructureConsoleLED5")
 sbn LED HASH("BatteryRatio") Mode 1
 sbn LED HASH("BatteryPowerActual") Mode 2
 sbn LED HASH("BatteryFlow") Mode 2
+sbn LED HASH("BatteryPowerPotential") Mode 2
 
 Start:
 #Get data
@@ -56,6 +57,7 @@ sbn LED HASH("BatteryPowerActual") Setting BatteryPowerActual
 sbn LED HASH("BatteryRuntime") Setting Runtime
 sbn LED HASH("BatteryChargeTime") Setting ChargeTime
 sbn LED HASH("BatteryFlow") Setting Flow
+sbn LED HASH("BatteryPowerPotential") Setting BatteryPowerPotential
 yield
 yield
 j Start

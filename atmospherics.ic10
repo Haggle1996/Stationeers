@@ -1,0 +1,40 @@
+alias AC db
+alias Filter d0
+alias Sensor d1
+
+alias CurrentTemp r0
+alias CurrentPressure r1
+alias IsHot r2
+alias IsHigh r3
+alias IsLow r4
+alias Enable r15
+
+define ACTemp 293 # ~20
+define MaxTemp 296.0 # ~23c
+define MaxPressure 5000
+
+# setup
+s AC On 1 # always on
+s AC Setting ACTemp
+
+fMain:
+yield
+jal doCooling
+jal doFiltering
+j fMain
+
+doCooling:
+l CurrentTemp Sensor Temperature
+l CurrentPressure AC PressureInput
+sgt IsHot CurrentTemp MaxTemp
+sgt IsHigh CurrentPressure MaxPressure
+or Enable IsHot IsHigh
+s AC Mode Enable
+j ra
+
+doFiltering:
+# turn filter on if input pressure > 0
+l CurrentPressure Filter PressureInput
+sgtz Enable CurrentPressure
+s Filter On Enable
+j ra
