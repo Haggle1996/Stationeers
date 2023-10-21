@@ -3,8 +3,6 @@ alias Light d1
 
 alias IsDaylight r0
 
-define LAMP HASH("StructureLightLong")
-
 fMain:
 yield
 jal fDoGrowLight
@@ -13,6 +11,4 @@ j fMain
 fDoGrowLight:
 l IsDaylight Sensor Activate 
 s Light On IsDaylight
-seqz IsDaylight IsDaylight
-sb LAMP On IsDaylight
 j ra

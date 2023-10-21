@@ -1,0 +1,39 @@
+alias CurrentPressure r0
+alias O2Pct r1
+alias N2Pct r2
+
+alias Sensor d0
+alias O2Pump d1
+alias N2Pump d2
+
+define IdealPressure 98.0
+define MaxPressure 100.0
+define O2Ratio 0.23
+define N2Ratio 0.73
+
+fMain:
+yield
+move O2Pct 0
+move N2Pct 0
+
+l CurrentPressure Sensor Pressure
+# if > max, everything off
+bgt CurrentPressure MaxPressure fSet
+
+# if < ideal, pump both
+slt O2Pct CurrentPressure IdealPressure
+slt N2Pct CurrentPressure IdealPressure
+
+# pressure okay, test ratios
+brnez O2Pct 3
+l O2Pct Sensor RatioOxygen
+slt O2Pct O2Pct O2Ratio
+brnez N2Pct 3
+l N2Pct Sensor RatioNitrogen
+slt N2Pct N2Pct N2Ratio
+
+fSet:
+s O2Pump On O2Pct
+s N2Pump On N2Pct
+
+j fMain

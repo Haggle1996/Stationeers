@@ -1,0 +1,113 @@
+# Zone control for lights and switches
+# Name switches and lights zone1 to 12
+# Name switch allzone to turn off all zoneN's
+# Name lights dayzone for on during day
+# Name lights nightzone for on at night
+alias isOn r0
+alias lighthash r1
+alias nextlight r15
+
+# Hashes to process
+alias DaylightSensor d0
+
+define hash1 HASH("StructureWallLight")
+define hash2 HASH("StructureDiode")
+define hash3 HASH("StructureLightLong")
+define hash4 HASH("StructureLightLongAngled")
+define hash5 HASH("StructureLightLongWide")
+define hash6 HASH("StructureLightRound")
+define hash7 HASH("StructureLightRoundAngled")
+define hash8 HASH("StructureLightRoundSmall")
+define hash9 HASH("StructureWallLightBattery")
+define switch HASH("StructureLogicSwitch2")
+define allzones HASH("allzones") #emergency off switch
+
+# Lighting zones
+define dzone HASH("dayzone")
+define nzone HASH("nightzone")
+
+fMain:
+yield
+# if alloff switch is on, do that and skip
+lbn isOn switch allzones Open Maximum
+beq isOn 1 fAllOff
+
+# Do zones for hashes
+# comment out hashes that aren't in use for speed
+s db Setting 99
+move lighthash hash1
+jal fDoLights
+move lighthash hash2
+jal fDoLights
+#move lighthash hash3
+#jal fDoLights
+#move lighthash hash4
+#jal fDoLights
+#move lighthash hash5
+#jal fDoLights
+move lighthash hash6
+jal fDoLights
+move lighthash hash7
+jal fDoLights
+#move lighthash hash8
+#jal fDoLights
+#move lighthash hash9
+#jal fDoLights
+j fMain
+
+fDoLights:
+move nextlight ra
+jal fDoZoneLights
+jal fDoTimeLights
+j nextlight
+
+fDoZoneLights:
+lbn isOn switch HASH("zone1") Open Maximum
+sbn lighthash HASH("zone1") On isOn
+lbn isOn switch HASH("zone2") Open Maximum
+sbn lighthash HASH("zone2") On isOn
+lbn isOn switch HASH("zone3") Open Maximum
+sbn lighthash HASH("zone3") On isOn
+lbn isOn switch HASH("zone4") Open Maximum
+sbn lighthash HASH("zone4") On isOn
+lbn isOn switch HASH("zone5") Open Maximum
+sbn lighthash HASH("zone5") On isOn
+lbn isOn switch HASH("zone6") Open Maximum
+sbn lighthash HASH("zone6") On isOn
+lbn isOn switch HASH("zone7") Open Maximum
+sbn lighthash HASH("zone7") On isOn
+lbn isOn switch HASH("zone8") Open Maximum
+sbn lighthash HASH("zone8") On isOn
+lbn isOn switch HASH("zone9") Open Maximum
+sbn lighthash HASH("zone9") On isOn
+lbn isOn switch HASH("zone10") Open Maximum
+sbn lighthash HASH("zone10") On isOn
+lbn isOn switch HASH("zone11") Open Maximum
+sbn lighthash HASH("zone11") On isOn
+lbn isOn switch HASH("zone12") Open Maximum
+sbn lighthash HASH("zone12") On isOn
+j ra
+
+fDoTimeLights:
+bdns DaylightSensor ra
+l isOn DaylightSensor Activate
+sbn lighthash HASH("dayzone") On isOn
+seqz isOn isOn
+sbn lighthash HASH("nightzone") On isOn
+j ra
+
+fAllOff:
+sbn switch HASH("zone1") Open 0
+sbn switch HASH("zone2") Open 0
+sbn switch HASH("zone3") Open 0
+sbn switch HASH("zone4") Open 0
+sbn switch HASH("zone5") Open 0
+sbn switch HASH("zone6") Open 0
+sbn switch HASH("zone7") Open 0
+sbn switch HASH("zone8") Open 0
+sbn switch HASH("zone9") Open 0
+sbn switch HASH("zone10") Open 0
+sbn switch HASH("zone11") Open 0
+sbn switch HASH("zone12") Open 0
+sbn switch allzones Open 0 # reset
+j fMain

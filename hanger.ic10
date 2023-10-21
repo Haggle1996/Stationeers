@@ -1,0 +1,94 @@
+alias IsButtonPressed r0
+alias IsInternalOpen r1
+alias IsIdle r2
+alias DesiredPressure r3
+alias CurrentPressure r4
+alias CurrentVent r5
+
+alias Console d0
+
+define Buttons HASH("StructureLogicButton")
+define Light HASH("StructureFlashingLight")
+define Doors HASH("StructureAirlockGate")
+define Vents HASH("StructureActiveVent")
+define Sensors HASH("StructureGasSensor")
+
+define Interior HASH("Internal")
+define Exterior HASH("External")
+define Alock HASH("Airlock")
+
+define IdealPressure 101.3
+
+fInit:
+sb Doors Open 0
+sb Vents On 0
+sb Vents Lock 1
+
+fWaitForButton:
+yield
+lb IsButtonPressed Buttons Activate 1
+bnez IsButtonPressed fAirlockCycle
+j fWaitForButton
+
+fAirlockCycle:
+# turn on light
+sb Light On 1
+lbn IsInternalOpen Doors Interior Open Maximum # store direction
+sb Doors Open 0 # Close all doors
+jal fWaitForDoor
+
+# set the active vent
+breqz IsInternalOpen 3
+move CurrentVent Interior
+jr 2
+move CurrentVent Exterior
+sbn Vents CurrentVent Mode 1 # set directon
+sbn Vents CurrentVent On 1 # turn on, wait til 0
+jal fEmptyAirlock
+
+sleep 1 # cosmetic
+
+breqz IsInternalOpen 4
+move CurrentVent Exterior
+lbn DesiredPressure Sensors Exterior Pressure Maximum
+jr 3
+move CurrentVent Interior
+lbn DesiredPressure Sensors Interior Pressure Maximum
+min DesiredPressure DesiredPressure IdealPressure
+sbn Vents CurrentVent Mode 0
+sbn Vents CurrentVent On 1
+jal fFillAirlock
+
+breqz IsInternalOpen 3 #jump if opening internal
+sbn Doors Exterior Open 1
+jr 2
+sbn Doors Interior Open 1
+jal fWaitForDoor
+
+# turn off light
+sb Light On 0
+j fWaitForButton
+
+fWaitForDoor:
+yield
+lb IsIdle Doors Idle Minimum
+beqz IsIdle fWaitForDoor # loop if waiting for doors
+j ra
+
+fEmptyAirlock:
+yield
+lbn CurrentPressure Sensors Alock Pressure Average
+s Console Setting DesiredPressure
+bnez CurrentPressure fEmptyAirlock
+sb Vents On 0
+j ra
+
+fFillAirlock:
+yield
+lbn CurrentPressure Sensors Alock Pressure Average
+s Console Setting DesiredPressure
+brap CurrentPressure DesiredPressure 0.01 3 #prefer close than exact
+brgt CurrentPressure DesiredPressure 2
+j fFillAirlock 
+sb Vents On 0
+j ra

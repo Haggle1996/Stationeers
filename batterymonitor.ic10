@@ -8,14 +8,18 @@ alias Runtime r5 #Run time in min/sec
 alias ChargeTime r6 #Charge time in min/sec
 alias Flow r7 #Difference between Actual/Potential
 
-define Batt HASH("StructureBattery")
-define LED HASH("StructureConsoleLED5")
+define Batt HASH("StructureBatteryLarge")
+define LED HASH("StructureConsoleLED1x2")
+define Percent 1
+define Watts 2
 
 #Set display modes
-sbn LED HASH("BatteryRatio") Mode 1
-sbn LED HASH("BatteryPowerActual") Mode 2
-sbn LED HASH("BatteryFlow") Mode 2
-sbn LED HASH("BatteryPowerPotential") Mode 2
+sb LED Color Color.Yellow #default all to yellow
+sbn LED HASH("BatteryRatio") Mode Percent
+sbn LED HASH("BatteryPowerActual") Mode Watts
+sbn LED HASH("BatteryPowerActual") Color Color.Red
+sbn LED HASH("BatteryFlow") Mode Watts
+sbn LED HASH("BatteryPowerPotential") Mode Watts
 
 Start:
 #Get data
@@ -34,7 +38,11 @@ div Runtime Runtime 100
 
 #Flow
 sub Flow BatteryPowerPotential BatteryPowerActual
-blez Flow Zero #only calc if +power
+brgez Flow 3 # branch if positive
+sbn LED HASH("BatteryFlow") Color Color.Red
+jr 2
+sbn LED HASH("BatteryFlow") Color Color.Yellow
+#blez Flow Zero #only calc if +power
 
 #ChargeTime
 sub ChargeTime BatteryMaximum BatteryCharge #power needed
@@ -48,7 +56,7 @@ div ChargeTime ChargeTime 100
 j Write
 
 Zero:
-move Flow 0
+#move Flow 0
 move ChargeTime 0
 
 Write:

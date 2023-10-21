@@ -1,0 +1,57 @@
+alias AC db
+alias Filter d0
+alias Light d1
+
+alias CurrentTemp r0
+alias CurrentPressure r1
+alias CurrentDamage r2
+alias IsHigh r3
+alias IsLow r4
+alias Enable r15
+
+define MaxTemp 298.15 # 25c
+define MinTemp 293.15 # 20c
+define IdealPressure 101
+
+# setup
+s AC On 1 # always on
+s AC Setting MinTemp # 20c
+
+fMain:
+yield
+jal doFiltering
+jal doCooling
+jal filterCheck
+sleep 5
+j fMain
+
+doCooling:
+# AC on if temp outside range
+l CurrentTemp AC TemperatureOutput
+sgt IsHigh CurrentTemp MaxTemp
+sgt IsLow CurrentTemp MinTemp
+or Enable IsHigh IsLow
+s AC Mode Enable
+j ra
+
+doFiltering:
+# filter on if output pressure low
+l CurrentPressure Filter PressureOutput2
+sle Enable CurrentPressure IdealPressure
+s Filter On Enable
+j ra
+
+filterCheck:
+ls IsHigh Filter 0 Occupied #nearest input
+ls IsLow Filter 1 Occupied
+move Enable 0
+breqz IsHigh 4
+ls CurrentDamage Filter 0 Quantity
+seqz IsHigh CurrentDamage
+or Enable Enable IsHigh
+breqz IsLow 4
+ls CurrentDamage Filter 1 Quantity
+seqz IsLow CurrentDamage
+or Enable Enable IsLow
+s Light On Enable
+j ra

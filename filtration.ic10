@@ -1,0 +1,44 @@
+alias Filter db
+alias Light d1
+
+alias CurrentPressure r0
+alias CurrentDamage r1
+alias HasFilter1 r2
+alias HasFilter2 r3
+alias Enable r15
+
+define MaxPressure 39000
+
+# setup
+s Filter On 1 # always on
+
+fMain:
+yield
+jal doPressureCheck
+jal doFilterCheck
+j fMain
+
+doPressureCheck:
+# Emergency presssure check, prevent boom!
+l CurrentPressure Filter PressureOutput
+bgt MaxPressure CurrentPressure ra
+# turn light on and filter off, emergency!
+s Light On 1
+s Filter On 0 # halts everything
+j ra
+
+doFilterCheck:
+# flashing light on if either filter is at 0%
+ls HasFilter1 Filter 0 Occupied #nearest input
+ls HasFilter2 Filter 1 Occupied
+move Enable 0
+breqz HasFilter1 4
+ls CurrentDamage Filter 0 Quantity
+seqz HasFilter1 CurrentDamage
+or Enable Enable HasFilter1
+breqz HasFilter2 4
+ls CurrentDamage Filter 1 Quantity
+seqz HasFilter2 CurrentDamage
+or Enable Enable HasFilter2
+s Light On Enable
+j ra
