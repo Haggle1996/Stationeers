@@ -1,0 +1,77 @@
+# S1 turn on pump until analyzer = 0Pa or pressure > max
+# S2 run until no N
+# S3 open outgoing valve, close when pressure drops < min
+# restart
+alias AC d0
+alias Analyzer d1
+alias Pump d4
+alias Valve d5
+
+define maxPressure 3000
+define minPressure 2000
+
+alias pressure r0
+alias n r1
+alias stage r15
+
+init:
+s AC Setting 133.15 # -150C
+s AC On 1
+s AC Mode 1
+s Pump Setting 5
+s Pump On 0
+s Valve On 0
+
+main:
+yield
+l stage db Setting
+brlt stage 4 2
+move stage 0
+
+loop:
+jal safetyCheck
+s Valve On 0
+add stage stage 1
+s db Setting stage
+jr stage
+j stageOne
+j stageTwo
+j stageThree
+j main
+
+stageOne:
+s Pump On 1
+sleep 5
+l pressure AC PressureInput
+bgt pressure maxPressure stageOneEnd
+l pressure Analyzer Pressure
+beqz pressure stageOneEnd
+j stageOne
+stageOneEnd:
+s Pump On 0
+j loop
+
+stageTwo:
+sleep 10
+l n AC RatioNitrogenInput
+bnez n stageTwo
+j loop
+
+stageThree:
+sleep 10
+s Valve On 1
+l pressure AC PressureOutput
+bgt pressure minPressure stageThree
+s Valve On 0
+j loop
+
+safetyCheck:
+l pressure AC PressureInput
+ble pressure maxPressure ra
+s db Setting 0
+s Pump On 0
+sleep 10
+l n AC RatioNitrogenInput
+bnez n safetyCheck
+s Valve On 1
+j safetyCheck

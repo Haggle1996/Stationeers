@@ -1,0 +1,27 @@
+alias LogicTransmitter d0
+alias OverrideSwitch d1
+
+define Doors -566348148 #Med Hangar Doors
+
+alias color r0
+alias override r1
+
+main:
+yield
+
+l override OverrideSwitch Open
+breqz override 3
+sb Doors Open 1
+j main
+
+l color LogicTransmitter Setting
+beq color Color.White doStorm # Closed during day
+beq color Color.Orange doStorm
+beq color Color.Black doStorm
+beq color Color.Red doStorm
+sb Doors Open 1
+j main
+
+doStorm:
+sb Doors Open 0
+j main

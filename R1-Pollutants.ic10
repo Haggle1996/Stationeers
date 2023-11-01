@@ -1,0 +1,65 @@
+# only one valve open at a time
+# S1 open incoming valve to 30MPa, close valve
+# S2 start AC, run until no X, H20, N20
+# S3 open outgoing valve, close when pressure drops < 20
+# restart
+alias AC d0
+alias IncomingValve d4
+alias OutgoingValve d5
+
+define maxPressure 30000
+define minPressure 20000
+
+alias pressure r0
+alias x r1
+alias n20 r2
+alias h20 r3
+alias stage r15
+
+init:
+s AC Setting 283.15 # 10C
+s AC On 1
+s AC Mode 1
+s IncomingValve On 0
+s OutgoingValve On 0
+
+main:
+yield
+l stage db Setting
+brlt stage 4 2
+move stage 0
+
+loop:
+add stage stage 1
+s db Setting stage
+jr stage
+j stageOne
+j stageTwo
+j stageThree
+j main
+
+stageOne:
+s IncomingValve On 1
+sleep 5
+l pressure AC PressureInput
+blt pressure maxPressure stageOne
+s IncomingValve On 0
+j loop
+
+stageTwo:
+sleep 10
+l x AC RatioPollutantInput
+l n20 AC RatioNitrousOxideInput
+l h20 AC RatioWaterInput
+bnez x stageTwo
+bnez n20 stageTwo
+bnez h20 stageTwo
+j loop
+
+stageThree:
+s OutgoingValve On 1
+sleep 10
+l pressure AC PressureOutput
+bgt pressure minPressure stageThree
+s OutgoingValve On 0
+j loop

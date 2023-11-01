@@ -1,0 +1,32 @@
+alias WeatherStation d0
+alias DaylightSensor d1
+alias LogicTransmitter d2
+
+alias stormState r0
+alias color r1
+
+main:
+yield
+
+move color Color.White
+l stormState WeatherStation Mode
+bnez stormState doStorm
+
+# not in storm
+l stormState DaylightSensor Activate
+brnez stormState 2
+move color Color.Blue
+
+sendData:
+s LogicTransmitter Setting color
+j main
+
+doStorm:
+brne stormState 1 6
+s LogicTransmitter Setting Color.Orange
+sleep 1
+s LogicTransmitter Setting Color.Black
+sleep 1
+j main
+move color Color.Red
+j sendData

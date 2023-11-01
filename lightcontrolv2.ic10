@@ -1,0 +1,66 @@
+alias hashCount r0
+alias hash r1
+alias zone r2
+alias index r3
+alias temp r4
+alias isOn r15
+
+define switch HASH("StructureLogicSwitch2")
+
+init:
+push HASH("StructureWallLight")
+push HASH("StructureDiode")
+push HASH("StructureLightRound")
+push HASH("StructureLightRoundAngled")
+#push HASH("StructureLightRoundSmall")
+#push HASH("StructureWallLightBattery")
+#push HASH("StructureLightLong")
+#push HASH("StructureLightLongAngled")
+#push HASH("StructureLightLongWide")
+move hashCount sp
+
+fMain:
+yield
+move index 0
+
+zoneloop:
+jal getZoneHash # get zone
+jal doZoneLights
+add index index 1
+brgt index 8 2 # 3 zones
+j zoneloop
+j fMain
+
+getZoneHash:
+mul temp index 2
+add temp temp 1
+jr temp
+move zone HASH("zone1")
+j getZoneHash_end
+move zone HASH("zone2")
+j getZoneHash_end
+move zone HASH("zone3")
+j getZoneHash_end 
+move zone HASH("zone4")
+j getZoneHash_end
+move zone HASH("zone5")
+j getZoneHash_end
+move zone HASH("zone6")
+j getZoneHash_end
+move zone HASH("zone7")
+j getZoneHash_end
+move zone HASH("zone8")
+j getZoneHash_end
+getZoneHash_end:
+j ra
+
+doZoneLights:
+move sp hashCount
+lbn isOn switch zone Open Maximum
+beq isOn ninf ra # skip if no switch
+lightLoop:
+peek hash
+sbn hash zone On isOn
+sub sp sp 1
+beqz sp ra
+j lightLoop

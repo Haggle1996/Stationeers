@@ -1,0 +1,50 @@
+# keep pressure in pipe above 30MPa
+# turn off exterior vent at 32MPa
+# At 38MPa turn off interior volume pump
+# turn on warning light if above 40MPA and vent
+alias Analyzer d0
+alias Vent d1 #from outside
+alias Pump d2 #from inside
+alias Light d3
+
+alias pressure r0
+alias flowOn r1
+
+define emergencyPressure 40000
+define maxSafePressure 38000 # turn off pump
+define maxVentPressure 36000 # turn off at 32000
+define minVentPressure 34000 # turn on below 30000
+
+main:
+yield
+
+l pressure Analyzer Pressure
+bge pressure emergencyPressure emergency
+
+# not emergency, put things back to normal
+s Light On 0
+s Vent Mode 1
+
+sle flowOn pressure maxSafePressure
+s Pump On flowOn
+
+bleal pressure minVentPressure ventOn # on if below minimum
+bgtal pressure maxVentPressure ventOff # off if above maximum
+
+j main
+
+emergency:
+s db Setting 911
+s Light On 1
+s Pump On 0
+s Vent Mode 0 # set outward
+s Vent On 1 # vent to world
+j main
+
+ventOn:
+s Vent On 1
+j ra
+
+ventOff:
+s Vent On 0
+j ra

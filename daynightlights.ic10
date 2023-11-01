@@ -1,0 +1,12 @@
+define lights HASH("StructureDiode")
+
+alias LogicTransmitter d0
+
+alias color r0
+
+main:
+yield
+
+l color LogicTransmitter Setting
+sbn lights HASH("zone4") Color color
+j main

@@ -1,0 +1,41 @@
+# diode slide shows amount of water
+# volume pump auto-on when water in crusher
+# heater on when water < 20c
+alias Console d0 # LED console
+alias Tank d1 # insulated liquid tank
+alias Pump d2 # liq volume pump
+alias NetAnalyzer d3 # Full network analyzer
+alias Heater d4 # liquid pipe heater
+alias Analyzer d5 # liq pipe analyzer
+
+#define capacity 6000
+
+alias volume r0
+alias value r1
+
+init:
+s Analyzer On 1
+s Console Color Color.White
+
+main:
+yield
+
+jal doDiodeSlide
+jal doLiquidToPump
+
+j main
+
+doDiodeSlide:
+l volume Tank VolumeOfLiquid
+l value NetAnalyzer VolumeOfLiquid
+add volume volume value
+round volume volume
+s Console Setting volume
+j ra
+
+doLiquidToPump:
+l volume Analyzer VolumeOfLiquid
+snez volume volume
+s Pump On volume
+sleep 5
+j ra

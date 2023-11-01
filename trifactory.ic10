@@ -1,0 +1,127 @@
+alias StackerAutolathe d0
+alias StackerElectronics d1
+alias StackerPipeBender d2
+alias LEDAutolathe d3
+alias LEDElectronics d4
+alias LEDPipeBender d5
+alias Printer r15
+alias Stacker r14
+define Sensor 568800213#proximity
+define Autolathe 336213101
+define Electronics 1307165496
+define PipeBender -1888248335
+move Printer Autolathe
+move Stacker 0
+jal checkPrinter
+move Printer Electronics
+move Stacker 1
+jal checkPrinter
+move Printer PipeBender
+move Stacker 2
+jal checkPrinter
+lb r0 436888930 Setting 0#batch slt rdr bin occupie
+sb -850484480 On r0
+slez r0 r0
+sb -850484480 Open r0
+yield
+j 12
+checkPrinter:
+lb r0 Printer Open 3
+bgtz r0 openPrinter
+lb r0 Printer On 3
+add r1 Stacker 11#slot of printer inactivity
+beqz r0 printerOff
+j printerOn
+openPrinter:
+l r1 dr14 Setting #old setting
+s dr14 On 1
+s dr14 Setting 500
+sb Printer On 1
+lb r0 Printer Reagents 3#jump here
+l r2 dr14 ExportCount
+s dr14 ClearMemory 1
+s dr14 Activate 1
+sleep 3
+add r0 r0 r2
+brgtz r0 -8
+sb Printer Open 0
+sb Printer On 0
+s dr14 Setting r1
+j ra
+printerOff:
+ls r0 dr14 0 Occupied
+ls r2 dr14 2 Occupied
+or r0 r0 r2
+s dr14 Activate r0
+s dr14 On r0
+add r0 Stacker 3
+s dr0 On 0
+move rr1 0
+move r1 sp#clean queue for offline printer
+brlez sp 8#move to move sp r1
+pop r0
+pop r0
+pop r0
+brne r0 Printer -4#move to brlez sp 8
+push 0
+pop r0
+jr -7#move to brlez sp 8
+move sp r1
+j ra
+printerOn:
+lb r0 Printer Activate 3
+add r2 Stacker 3#LED Port
+s dr2 On 1 #reserved: r1,r2,r3,r4
+l r3 dr14 Setting#stacker setting
+beqz r0 printerInactive
+lb r0 Printer ExportCount 3#printer active
+sub r0 r3 r0
+s dr2 Setting r0
+s dr2 Color 2
+sgtz r0 r0
+sb Printer Activate r0
+s dr14 On 1
+move rr1 0
+j ra
+printerInactive:
+s dr2 Setting r3
+s dr2 Color 6
+add rr1 rr1 1#auto off
+sgt r4 rr1 20
+select rr1 r4 20 rr1
+slt r0 rr1 20
+lb r4 Sensor Activate 3
+or r0 r0 r4
+sb Printer On r0
+sb Printer ClearMemory 1
+bgt rr1 3 addQueue
+move r5 sp
+move r4 0
+j checkQueue
+queueFinish:
+brlt rr1 3 2
+s dr14 On 0
+j ra
+checkQueue:
+blez sp checkQueueFinish
+pop r6#count
+pop r7#recipehash
+pop r0#printer ID
+beqz r0 checkQueue
+move r4 1#at least one command in queue
+bne r0 Printer checkQueue
+push 0#clear printer ID/command completed
+sb Printer RecipeHash r7
+s dr14 Setting r6
+sb Printer Activate 1
+checkQueueFinish:
+select sp r4 r5 0
+j queueFinish
+addQueue:
+l r0 dr14 On
+beqz r0 queueFinish
+push Printer
+lb r0 Printer RecipeHash 3
+push r0#selected item on printer
+push r3#stacker setting
+j queueFinish
