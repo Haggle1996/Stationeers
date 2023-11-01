@@ -1,77 +1,67 @@
-# S1 turn on pump until analyzer = 0Pa or pressure > max
-# S2 run until no C02
-# S3 open outgoing valve, close when pressure drops < min
-# restart
+# pressurize to 38MPa, fill at 30MPa
+# Only open valve when pressure above 30MPa
+#  and 0% CO2.
 alias AC d0
 alias Analyzer d1
 alias Pump d4
 alias Valve d5
 
-define maxPressure 3000
-define minPressure 2000
+define maxPressure 40000
+define minPressure 34000
 
 alias pressure r0
 alias co2 r1
-alias stage r15
+alias isOpen r15
 
 init:
 s AC Setting 223.15 # -50C
 s AC On 1
-s AC Mode 1
-s Pump Setting 5
+s Pump Setting 10
 s Pump On 0
 s Valve On 0
 
 main:
 yield
-l stage db Setting
-brlt stage 4 2
-move stage 0
+s AC Mode 1
 
-loop:
-jal safetyCheck
-s Valve On 0
-add stage stage 1
-s db Setting stage
-jr stage
-j stageOne
-j stageTwo
-j stageThree
+jal valveCheck
+jal pressurize
+
 j main
 
-stageOne:
+pressurize:
+l isOpen Valve On # valve must be closed
+bnez isOpen pressurize_loop_end
+l pressure Analyzer Pressure # pressure below min
+bge pressure minPressure pressurize_loop_end
+# no more then 1L liquid
+l co2 Analyzer VolumeOfLiquid
+bgt co2 1.0 pressurize_loop_end
 s Pump On 1
+pressurize_loop:
+l pressure Analyzer Pressure # pressure above max
+bge pressure maxPressure pressurize_loop_end
+l co2 Analyzer VolumeOfLiquid
+bgt co2 1.0 pressurize_loop_end # more than a liter
+yield
+j pressurize_loop
+pressurize_loop_end:
+s Pump On 0
+j ra
+
+valveCheck:
+l pressure Analyzer Pressure 
+sgt pressure pressure minPressure # pressure > min
+l co2 Analyzer RatioCarbonDioxide 
+seqz co2 co2                      # 0% gas co2
+and isOpen pressure co2
+l co2 Analyzer VolumeOfLiquid
+seqz co2 co2                      # 0% liq co2
+and isOpen isOpen co2 
+l pressure Pump On 
+seqz pressure pressure            # pump is off
+and isOpen isOpen pressure
+s Valve On isOpen
+breqz isOpen 2
 sleep 5
-l pressure AC PressureInput
-bgt pressure maxPressure stageOneEnd
-l pressure Analyzer Pressure
-beqz pressure stageOneEnd
-j stageOne
-stageOneEnd:
-s Pump On 0
-j loop
-
-stageTwo:
-sleep 10
-l co2 AC RatioCarbonDioxideInput
-bnez co2 stageTwo
-j loop
-
-stageThree:
-sleep 10
-s Valve On 1
-l pressure AC PressureOutput
-bgt pressure minPressure stageThree
-s Valve On 0
-j loop
-
-safetyCheck:
-l pressure AC PressureInput
-ble pressure maxPressure ra
-s db Setting 0
-s Pump On 0
-sleep 10
-l co2 AC RatioCarbonDioxideInput
-bnez co2 safetyCheck
-s Valve On 1
-j safetyCheck
+j ra

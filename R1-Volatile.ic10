@@ -1,77 +1,67 @@
-# S1 turn on pump until analyzer = 0Pa or pressure > max
-# S2 run until no VOL
-# S3 open outgoing valve, close when pressure drops < min
-# restart
+# pressurize to 38MPa, fill at 30MPa
+# Only open valve when pressure above 30MPa
+#  and 0% vol.
 alias AC d0
 alias Analyzer d1
 alias Pump d4
 alias Valve d5
 
-define maxPressure 3000
-define minPressure 2000
+define maxPressure 38000
+define minPressure 32000
 
 alias pressure r0
 alias vol r1
-alias stage r15
+alias isOpen r15
 
 init:
-s AC Setting 153.15 # -100C
+s AC Setting 192.15 # -81C
 s AC On 1
-s AC Mode 1
-s Pump Setting 5
+s Pump Setting 10
 s Pump On 0
 s Valve On 0
 
 main:
 yield
-l stage db Setting
-brlt stage 4 2
-move stage 0
+s AC Mode 1
 
-loop:
-jal safetyCheck
-s Valve On 0
-add stage stage 1
-s db Setting stage
-jr stage
-j stageOne
-j stageTwo
-j stageThree
+jal valveCheck
+jal pressurize
+
 j main
 
-stageOne:
+pressurize:
+l isOpen Valve On # valve must be closed
+bnez isOpen pressurize_loop_end
+l pressure Analyzer Pressure # pressure below min
+bge pressure minPressure pressurize_loop_end
+# no more then 1L liquid
+l vol Analyzer VolumeOfLiquid
+bgt vol 1.0 pressurize_loop_end
 s Pump On 1
-sleep 5
-l pressure AC PressureInput
-bgt pressure maxPressure stageOneEnd
+pressurize_loop:
+l pressure Analyzer Pressure # pressure above max
+bge pressure maxPressure pressurize_loop_end
+l vol Analyzer VolumeOfLiquid
+bgt vol 1.0 pressurize_loop_end # more than a liter
+yield
+j pressurize_loop
+pressurize_loop_end:
+s Pump On 0
+j ra
+
+valveCheck:
 l pressure Analyzer Pressure
-beqz pressure stageOneEnd
-j stageOne
-stageOneEnd:
-s Pump On 0
-j loop
-
-stageTwo:
-sleep 10
-l vol AC RatioVolatilesInput
-bnez vol stageTwo
-j loop
-
-stageThree:
-sleep 10
-s Valve On 1
-l pressure AC PressureOutput
-bgt pressure minPressure stageThree
-s Valve On 0
-j loop
-
-safetyCheck:
-l pressure AC PressureInput
-ble pressure maxPressure ra
-s db Setting 0
-s Pump On 0
-sleep 10
-l vol AC RatioVolatilesInput
-bnez vol safetyCheck
-s Valve On 1
-j safetyCheck
+sgt pressure pressure minPressure # pressure > min
+l vol Analyzer RatioVolatiles
+seqz vol vol                      # 0% gas vol
+and isOpen pressure vol
+l vol Analyzer VolumeOfLiquid
+seqz vol vol                      # 0% liq vol
+and isOpen isOpen vol
+l pressure Pump On
+seqz pressure pressure            # pump is off
+and isOpen isOpen pressure
+s Valve On isOpen
+breqz isOpen 2
+sleep 5
+j ra
