@@ -12,8 +12,8 @@ alias flowOn r1
 
 define emergencyPressure 40000
 define maxSafePressure 38000 # turn off pump
-define maxVentPressure 36000 # turn off at 32000
-define minVentPressure 34000 # turn on below 30000
+define maxVentPressure 32000 # turn off at 32000
+define minVentPressure 30000 # turn on below 30000
 
 main:
 yield

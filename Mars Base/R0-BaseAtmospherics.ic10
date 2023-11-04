@@ -1,0 +1,42 @@
+alias sensor d0
+alias pumpN d4
+alias pumpO2 d5
+
+define maxPressure 105.0
+define idealPressure 100.0
+define o2Ratio 0.23
+define nRatio 0.73
+
+alias o r0
+alias n2 r1
+alias pressure r2
+
+init:
+s pumpN Setting 30
+s pumpO2 Setting 10
+
+main:
+yield
+move o 0
+move n2 0
+
+# pressure > max, all off
+l pressure sensor Pressure
+bgt pressure maxPressure setPumps
+
+# pressure < ideal, pump both
+slt o pressure idealPressure
+slt n2 pressure idealPressure
+
+# pressure > ideal, test ratios
+brnez o 3
+l o sensor RatioOxygen
+slt o o o2Ratio
+brnez n2 3
+l n2 sensor RatioNitrogen
+slt n2 n2 nRatio
+
+setPumps:
+s pumpO2 On o
+s pumpN On n2
+j main

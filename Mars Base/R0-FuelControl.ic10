@@ -1,0 +1,37 @@
+alias n20Tank d0
+alias nitrolyzer d1
+alias filter d2
+alias heater d3
+alias ac d4
+alias fuelTank d5
+
+alias temp r0
+alias pressure r1
+
+define n20Temp 293.0 # 20C
+define n20MaxPressure 1000.0
+
+init:
+s nitrolyzer On 0
+s filter On 0
+s heater On 0
+s ac On 0
+s ac Seeding n20Temp
+
+main:
+yield
+
+jal checkN2Otemp
+
+j main
+
+# this needs to be fuel
+checkN2Otemp:
+l pressure n20Tank Pressure
+snez temp pressure # don't heat if no pressure
+beqz temp heaterSet
+l temp n20Tank Temperature
+slt temp temp n20Temp
+heaterSet:
+s heater On temp
+j ra

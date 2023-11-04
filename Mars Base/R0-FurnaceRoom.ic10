@@ -1,0 +1,25 @@
+alias sensor d0
+alias vent d1
+alias door d2
+
+alias pressure r0
+alias open r1
+
+main:
+yield
+
+jal depressurizeRoom
+
+j main
+
+depressurizeRoom:
+l open door Open # only if door closed
+bnez open depressurize_loop_end
+l pressure sensor Pressure
+beqz pressure depressurize_loop_end
+s vent Mode 1
+s vent On 1
+j ra
+depressurize_loop_end:
+s vent On 0
+j ra

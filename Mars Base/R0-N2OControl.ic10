@@ -1,0 +1,67 @@
+alias n2oTank d0
+alias nitrolyzer d1
+alias filter d2
+alias heater d3
+alias transmitter d5
+
+alias temperature r0
+alias pressure r1
+alias filterPressure r2
+alias color r3
+alias inputPressure1 r4
+alias inputPressure2 r5
+alias temp r15
+
+define n2oTemp 293.0 # 20C
+define n2oMaxPressure 1000.0
+define n2oIdealPressure 900.0
+
+init:
+s nitrolyzer On 0
+s filter On 0
+s heater On 0
+
+main:
+yield
+
+l pressure n2oTank Pressure
+l temperature n2oTank Temperature
+l filterPressure filter PressureInput
+l color transmitter Setting
+l inputPressure1 nitrolyzer PressureInput
+l inputPressure2 nitrolyzer PressureInput2
+
+jal checkN2Otemp
+jal checkFilterPressure
+jal checkN2Opressure
+
+j main
+
+checkN2Otemp:
+snez temp pressure # don't heat if no pressure
+beqz temp heaterSet
+slt temp temperature n2oTemp
+heaterSet:
+s heater On temp
+j ra
+
+checkN2Opressure:
+# turn off if either inputs have 0 pressure
+beqz inputPressure1 shutoff
+beqz inputPressure2 shutoff
+# only produce during storms
+beq color Color.Red doNitro
+shutoff:
+s nitrolyzer On 0
+j ra
+# produce n2o if pressure low
+doNitro:
+sgt temp n2oIdealPressure pressure
+s nitrolyzer On temp
+j ra
+
+checkFilterPressure:
+# empty pressure in front of filter
+sgtz temp filterPressure
+s filter On temp
+j ra

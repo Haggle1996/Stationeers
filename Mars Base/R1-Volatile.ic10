@@ -1,0 +1,67 @@
+# Volatiles Filtering
+alias AC d0
+alias Analyzer d1
+alias OutgoingAnalyzer d2
+alias IncomingAnalyzer d3
+alias IncomingPump d4
+alias OutgoingPump d5
+
+define maxPressure 38000
+define minPressure 7000
+
+alias temp r0
+
+init:
+s AC Setting 192.15 # -81C
+s AC On 1
+s IncomingPump On 0
+s OutgoingPump On 0
+s IncomingPump Setting 10
+s OutgoingPump Setting 10
+
+main:
+yield
+s AC Mode 1
+
+jal doOutgoingPump
+jal doIncomingPump
+
+j main
+
+doIncomingPump:
+l temp Analyzer Pressure           # only fill below min
+bgt temp minPressure pressurize_loop_end
+pressurize_loop:
+l temp OutgoingPump On             # outgoing must be off
+bnez temp pressurize_loop_end
+l temp Analyzer Pressure           # pressure below max
+bge temp maxPressure pressurize_loop_end
+l temp Analyzer VolumeOfLiquid     # no more then 1L liquid
+bgt temp 1.0 pressurize_loop_end
+l temp IncomingAnalyzer Pressure   # incoming tank not low
+ble temp minPressure pressurize_loop_end
+s IncomingPump On 1
+yield
+j pressurize_loop
+pressurize_loop_end:
+s IncomingPump On 0
+j ra
+
+doOutgoingPump:
+l temp Analyzer RatioVolatiles     # no VOL gas
+bnez temp depressurize_loop_end
+l temp Analyzer VolumeOfLiquid     # no liquid CO2
+bnez temp depressurize_loop_end
+l temp IncomingPump On             # outgoing pump off
+bnez temp depressurize_loop_end
+depressurize_loop:
+l temp Analyzer Pressure           # pressure > min
+ble temp minPressure depressurize_loop_end
+l temp OutgoingAnalyzer Pressure   # pressure < max
+bge temp maxPressure depressurize_loop_end
+s OutgoingPump On 1
+yield
+j depressurize_loop
+depressurize_loop_end:
+s OutgoingPump On 0
+j ra
