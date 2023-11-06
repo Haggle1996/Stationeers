@@ -1,0 +1,36 @@
+alias Analyzer0 d0
+alias Analyzer1 d1
+alias Analyzer2 d2
+alias Analyzer3 d3
+alias Analyzer4 d4
+alias Analyzer5 d5
+
+alias power r0
+
+define console HASH("StructureConsoleLED5")
+
+main:
+yield
+sb console Color Color.Red
+sb console Mode 2
+
+brdns Analyzer0 3
+l power Analyzer0 PowerActual
+sbn console HASH("R0") Setting power
+brdns Analyzer1 3
+l power Analyzer1 PowerActual
+sbn console HASH("R1") Setting power
+brdns Analyzer2 3
+l power Analyzer2 PowerActual
+sbn console HASH("R2") Setting power
+brdns Analyzer3 3
+l power Analyzer3 PowerActual
+sbn console HASH("R3") Setting power
+brdns Analyzer4 3
+l power Analyzer4 PowerActual
+sbn console HASH("R4") Setting power
+brdns Analyzer5 3
+l power Analyzer5 PowerActual
+sbn console HASH("R5") Setting power
+
+j main

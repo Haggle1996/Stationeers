@@ -1,0 +1,50 @@
+# Set analyzers on screw 0-2
+# Consoles on screw 3-5 will
+# output consumed power
+alias Analyzer0 d0
+alias Analyzer1 d1
+alias Analyzer2 d2
+alias Console0 d3
+alias Console1 d4
+alias Console2 d5
+
+alias power r0
+alias temp r14
+alias index r15
+
+main:
+yield
+move index 0
+loop:
+jal setDevices
+jal setConsole
+add index index 1
+bgt index 2 loop_end
+j loop
+loop_end:
+j main
+
+setDevices:
+mul temp index 3
+add temp temp 1
+jr temp
+alias analyzer d0
+alias console d3
+j set_end
+alias analyzer d1
+alias console d4
+j set_end
+alias analyzer d2
+alias console d5
+j set_end
+set_end:
+j ra
+
+setConsole:
+bdns analyzer ra
+bdns console ra
+s console Color Color.Red
+s console Mode 2
+l power analyzer PowerActual
+s console Setting power
+j ra

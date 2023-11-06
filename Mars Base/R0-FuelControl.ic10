@@ -16,7 +16,7 @@ s nitrolyzer On 0
 s filter On 0
 s heater On 0
 s ac On 0
-s ac Seeding n20Temp
+s ac Setting n20Temp
 
 main:
 yield

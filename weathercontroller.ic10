@@ -1,32 +1,38 @@
-alias WeatherStation d0
-alias DaylightSensor d1
-alias LogicTransmitter d2
+alias station d0 # weather station
+alias sensor d1 # daylight sensor
+alias transmitter d2 # logic transmitter
 
 alias stormState r0
 alias color r1
+alias seconds r2
+
+define console HASH("StructureConsoleLED5")
 
 main:
 yield
-
-move color Color.White
-l stormState WeatherStation Mode
+move color Color.White # default white=day
+l stormState station Mode
 bnez stormState doStorm
 
 # not in storm
-l stormState DaylightSensor Activate
+l stormState sensor Activate
 brnez stormState 2
 move color Color.Blue
 
 sendData:
-s LogicTransmitter Setting color
+s transmitter Setting color
 j main
 
 doStorm:
+l seconds station NextWeatherEventTime
+sbn console HASH("Storm Timer") On 1
+sbn console HASH("Storm Timer") Setting seconds
 brne stormState 1 6
-s LogicTransmitter Setting Color.Orange
+s transmitter Setting Color.Orange
 sleep 1
-s LogicTransmitter Setting Color.Black
+s transmitter Setting Color.Black
 sleep 1
 j main
-move color Color.Red
+sbn console HASH("Storm Timer") On 0
+move color Color.Red # storm here
 j sendData

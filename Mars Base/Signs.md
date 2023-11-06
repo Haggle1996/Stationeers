@@ -17,3 +17,6 @@
 
 <size=56><b><u>R5</u></b></size>
 <color=grey>Lighting</color>
+
+<size=56><b><u>R6</u></b></size>
+<color=green>Nitrolyzer</color>
