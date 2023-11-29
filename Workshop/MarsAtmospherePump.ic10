@@ -1,0 +1,57 @@
+alias sensor d0
+alias tank d3
+alias pump d4
+alias tankOutput d5
+
+define vent HASH("StructurePoweredVent")
+define name HASH("External Air Vent")
+
+define maxPressure 39000
+define minPressure 6000
+define maxTemperature 273.15
+
+alias temperature r15
+alias pressure r14
+
+main:
+  yield
+  l temperature sensor Temperature
+  jal doExternalVent
+  jal doPump
+  j main
+
+doExternalVent:
+  # vent in gas when temp ideal
+  push ra
+  bgt temperature maxTemperature doVentOff
+  l pressure tank Pressure # < max pressure
+  bgt pressure maxPressure doVentOff 
+  # we can only fill when cold
+  # so override volume pump if it's time
+  jal doPumpOff 
+  sbn vent name Mode Vent.Inward
+  sbn vent name On 1
+  pop ra
+  j ra
+doVentOff:
+  sbn vent name On 0
+  pop ra
+  j ra
+
+doPump:
+  lbn r0 vent name On Maximum
+  bnez r0 doPumpOff # not pressurizing
+  l r0 tank VolumeOfLiquid 
+  bnez r0 doPumpOff # no liquid present
+  l r0 tank RatioPollutant
+  bnez r0 doPumpOff # no pollutants
+  l pressure tank Pressure # > min pressure
+  ble pressure minPressure doPumpOff 
+  l pressure tankOutput Pressure # < max pressure
+  bgt pressure maxPressure doPumpOff 
+  s pump Setting 10
+  s pump On 1
+  j ra
+doPumpOff:
+  s pump On 0
+  j ra

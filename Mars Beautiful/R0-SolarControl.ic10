@@ -1,0 +1,66 @@
+alias sensor d0 # daylight sensor
+
+# heavy solar panel
+define panel HASH("StructureSolarPanelDualReinforced")
+define led HASH("StructureConsoleLED5")
+define angle 172 # 180 - Mars 8 degree solar angle
+# 600 seconds / 164 degrees for Mars
+define secsPerDegree 3.658536585365854 
+
+alias vertical r0
+alias horizontal r1
+alias efficiency r2
+alias time r3
+alias seconds r4
+alias minutes r5
+
+loop:
+    sleep 1
+    l vertical sensor Vertical
+    l horizontal sensor Horizontal
+    jal setTime
+    bgtal vertical 90 setNight
+    add vertical vertical 90
+setPanels:
+    sb panel Vertical vertical
+    sb panel Horizontal horizontal
+    lb efficiency panel Ratio Average
+    s db Setting efficiency
+    j loop
+
+setNight:
+    move vertical angle
+    move horizontal 270
+    j setPanels
+
+setTime:
+    add time horizontal 180
+    blt time 90 do0000
+    blt time 180 do0600
+    blt time 270 do1200
+do1800: # 6pm # 10:00-05:01, v=86-172, +300 secs
+    sub time 172 vertical
+    move seconds 300
+    j timeEnd
+do1200: # 12pm # 15:00-10:01, v=8-86, +600 secs
+    sub time 86 vertical
+    move seconds 600
+    j timeEnd
+do0600: # 6am # 20:00-15:01, v=86-8, +900 secs
+    sub time vertical 8
+    move seconds 900
+    j timeEnd
+do0000: # 12am # 05:00-00:01, v=172-86, +0 secs
+    sub time vertical 86
+timeEnd:
+    mul time time secsPerDegree
+    add time time seconds
+    div minutes time 60
+    trunc minutes minutes
+    mod seconds time 60
+    trunc seconds seconds
+    mul minutes minutes 100
+    add time minutes seconds
+    div time time 100
+    sbn led HASH("Time") Setting time
+    j ra

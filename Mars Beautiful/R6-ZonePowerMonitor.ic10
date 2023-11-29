@@ -1,0 +1,39 @@
+alias name r5 # zone name
+
+define analyzer HASH("StructureCableAnalysizer")
+define led HASH("StructureConsoleLED5")
+
+main:
+yield
+
+move name HASH("R0")
+jal doZone
+move name HASH("R1")
+jal doZone
+move name HASH("R2")
+jal doZone
+move name HASH("R3")
+jal doZone
+move name HASH("R4")
+jal doZone
+move name HASH("R5")
+jal doZone
+move name HASH("R6")
+jal doZone
+move name HASH("R7")
+jal doZone
+move name HASH("R8")
+jal doZone
+move name HASH("R9")
+jal doZone
+
+j main
+
+doZone:
+lbn r0 analyzer name PowerActual Average
+snez r1 r0
+sbn led name On r1 # only on if non-zero
+sbn led name Setting r0
+sbn led name Mode 2
+sbn led name Color Color.White
+j ra

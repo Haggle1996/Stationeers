@@ -1,0 +1,51 @@
+alias speaker d0 # klaxon speaker
+alias transmitter d1 # logic transmitter
+alias sensor d2 # daylight sensor
+alias station d3 # weather station
+
+alias stormState r0
+alias color r1
+alias seconds r2
+
+define console HASH("StructureConsoleLED5")
+define consoleName HASH("Seconds to Storm")
+
+main:
+sleep 1
+move color Color.White # default white=day
+l stormState station Mode
+bnez stormState doStorm
+
+# not in storm
+l stormState sensor Activate
+brnez stormState 2
+move color Color.Blue
+
+sendData:
+s transmitter Setting color
+s speaker SoundAlert Sound.None
+j main
+
+doStorm:
+s speaker On 1
+bne stormState 1 endStorm
+s speaker SoundAlert Sound.StormIncoming
+sleep 1 # extra delay for sound to play
+
+# update console
+l seconds station NextWeatherEventTime
+sbn console consoleName On 1
+sbn console consoleName Setting seconds
+
+# update colors unless storm over
+l color transmitter Setting
+breq color Color.Black 3
+move color Color.Black
+j sendData
+move color Color.Orange
+j sendData
+endStorm:
+s speaker On 0
+sbn console consoleName On 0
+move color Color.Red # storm here
+j sendData

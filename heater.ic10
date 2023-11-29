@@ -1,0 +1,17 @@
+alias sensor d0
+alias heater d1
+
+alias temperature r15
+alias isOn r14
+
+define temperatureMax 303.15
+define temperatureMin 293.15
+
+main:
+l temperature sensor Temperature
+l isOn heater On
+slt r1 temperature temperatureMin
+or r0 r1 isOn # leave running if on
+slt r1 temperature temperatureMax
+and r0 r0 r1
+s heater On r0

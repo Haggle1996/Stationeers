@@ -1,0 +1,76 @@
+alias sensor d0
+alias transmitter d1
+alias tank d3
+alias pump d4
+alias tankOutput d5
+
+define doors HASH("StructureLargeHangerDoor")
+define vent HASH("StructurePoweredVent")
+define name HASH("External Air Vent")
+
+define maxPressure 39000
+define minPressure 6000
+
+alias color r15
+alias temperature r14
+alias pressure r13
+
+main:
+  yield
+
+  l temperature sensor Temperature
+  
+  jal doHangarDoors
+  jal doExternalVent
+  jal doPump
+
+  j main
+
+doHangarDoors:
+  # doors closed during storm or +0C
+  l color transmitter Setting
+  beq color Color.Orange doDoorClose
+  beq color Color.Black doDoorClose
+  beq color Color.Red doDoorClose
+  bgt temperature 273 doDoorClose
+  sb doors Open 1
+  j ra
+doDoorClose:
+  sb doors Open 0
+  j ra
+
+doExternalVent:
+  # vent in gas when temp ideal
+  push ra
+  #blt temperature 265 doVentOff # > -8C
+  #bgt temperature 273 doVentOff # < 0C
+  bgt temperature 273.15 doVentOff
+  l pressure tank Pressure
+  bgt pressure maxPressure doVentOff # < max pressure
+  jal doPumpOff # override pump if on
+  sbn vent name Mode Vent.Inward
+  sbn vent name On 1
+  pop ra
+  j ra
+doVentOff:
+  sbn vent name On 0
+  pop ra
+  j ra
+
+doPump:
+  lbn r0 vent name On Maximum
+  bnez r0 doPumpOff # not pressurizing
+  l r0 tank VolumeOfLiquid 
+  bnez r0 doPumpOff # no liquid present
+  l r0 tank RatioPollutant
+  bnez r0 doPumpOff # no pollutants
+  l pressure tank Pressure
+  ble pressure minPressure doPumpOff # > min pressure
+  l pressure tankOutput Pressure
+  bgt pressure maxPressure doPumpOff # < max pressure
+  s pump Setting 10
+  s pump On 1
+  j ra
+doPumpOff:
+  s pump On 0
+  j ra

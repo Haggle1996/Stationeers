@@ -1,0 +1,50 @@
+# clock  V2
+
+alias sensor d0
+alias display d1
+
+alias old r7
+alias hour r4
+alias minute r5
+alias correctedhangle r6
+alias hangle r8
+alias vangle r9
+
+define HORIZONTAL 1
+define VERTICAL 2
+define DEGRAD 57.288 #180/3.142
+
+start:
+l hangle sensor Horizontal
+sub hangle 180 hangle
+#Convert to radians
+div hangle hangle DEGRAD
+l vangle sensor Vertical
+#Convert to radians
+div vangle vangle DEGRAD
+
+#Calculate corrected angle
+sin r1 hangle
+sin r2 vangle
+mul r0 r1 r2
+asin correctedhangle r0
+#Convert back to degrees
+mul correctedhangle correctedhangle DEGRAD
+blt hangle 1.571 continue
+sub correctedhangle 180 correctedhangle
+blt hangle 4.713 continue
+sub correctedhangle 540 correctedhangle
+continue:
+sub r1 old correctedhangle
+move old correctedhangle
+calctime:
+add r0 0 correctedhangle
+div r0 r0 15
+trunc hour r0
+sub minute r0 hour
+mul minute minute 60
+trunc minute minute
+div minute minute 100
+add r0 hour minute
+s display Setting r0
+j start

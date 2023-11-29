@@ -1,0 +1,77 @@
+# Gas cryogenic separation script
+# Filters for one gas, while maintaining min
+# pressure.
+alias ac d0
+alias analyzer d1
+alias outgoingAnalyzer d2
+alias incomingAnalyzer d3
+alias incomingPump d4
+alias outgoingPump d5
+
+define maxPressure 38000
+define minPressure 6000
+# change this depending on gas
+# At 6MPa minPressure, gasses condense at:
+# X:283.15, N2O:253.15, CO2:223.15
+# N:163.15, Vol:192.15, O:58.15
+# O, 58.15, but not needed as it's the last gas
+# left after N is filtered out.
+define acTemp 223.15
+
+init:
+  s ac Setting acTemp # -50C
+  s ac On 1
+  s incomingPump On 0
+  s outgoingPump On 0
+  s incomingPump Setting 10
+  s outgoingPump Setting 10
+  s incomingAnalyzer On 1
+  s analyzer On 1
+  s outgoingAnalyzer On 1
+
+main:
+  yield
+  s ac Mode 1 # make sure running
+
+  jal doOutgoingPump
+  jal doIncomingPump
+
+  j main
+
+doIncomingPump:
+  l r0 analyzer Pressure           # fill when < min
+  bgt r0 minPressure pressurize_loop_end
+pressurize_loop:
+  l r0 outgoingPump On             # not pumping out
+  bnez r0 pressurize_loop_end
+  l r0 analyzer Pressure           # not above max
+  bge r0 maxPressure pressurize_loop_end
+  l r0 analyzer VolumeOfLiquid     # < 1L liquid
+  bgt r0 1.0 pressurize_loop_end
+  l r0 incomingAnalyzer Pressure   # fill tank > min
+  ble r0 minPressure pressurize_loop_end
+  s incomingPump On 1
+  yield
+  j pressurize_loop
+pressurize_loop_end:
+  s incomingPump On 0
+  j ra
+
+doOutgoingPump:
+  l r0 analyzer RatioCarbonDioxide # no CO2 gas
+  bnez r0 depressurize_loop_end
+  l r0 analyzer VolumeOfLiquid     # no liquid CO2
+  bnez r0 depressurize_loop_end
+  l r0 incomingPump On             # not pumping in
+  bnez r0 depressurize_loop_end
+depressurize_loop:
+  l r0 analyzer Pressure           # pressure > min
+  ble r0 minPressure depressurize_loop_end
+  l r0 outgoingAnalyzer Pressure   # pressure < max
+  bge r0 maxPressure depressurize_loop_end
+  s outgoingPump On 1
+  yield
+  j depressurize_loop
+depressurize_loop_end:
+  s outgoingPump On 0
+  j ra

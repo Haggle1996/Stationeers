@@ -22,6 +22,7 @@ l pressure Analyzer Pressure
 bge pressure emergencyPressure emergency
 
 # not emergency, put things back to normal
+brdns Light 2
 s Light On 0
 s Vent Mode 1
 
@@ -35,6 +36,7 @@ j main
 
 emergency:
 s db Setting 911
+brdns Light 2
 s Light On 1
 s Pump On 0
 s Vent Mode 0 # set outward
