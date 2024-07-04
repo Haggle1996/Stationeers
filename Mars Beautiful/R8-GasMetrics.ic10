@@ -1,0 +1,126 @@
+alias tankO2 d0
+alias tankN d1
+alias tankCO2 d2
+alias tankV d3
+alias tankFuel d4
+alias moles r15
+alias minute r14
+alias day r13
+alias tankIndex r12
+alias index r11
+alias nameCurrent r10
+alias nameMinute r9
+alias nameDay r8
+alias name20 r7
+alias totalIndex r6
+alias validDays r5
+define led HASH("StructureConsoleLED5")
+main:
+  move day 0
+day_loop:
+  s db Setting day
+  move minute 0
+minute_loop:
+  sleep 10
+  move tankIndex 0
+tank_loop:
+  jal updateRefs
+  jal captureMinute
+  bgtal minute 19 captureDay
+  jal reportMetrics
+  add tankIndex tankIndex 1
+  blt tankIndex 5 tank_loop
+  add minute minute 1
+  blt minute 20 minute_loop
+  add day day 1
+  blt day 20 day_loop
+  j main
+updateRefs:
+  mul index tankIndex 6
+  add index index 1
+  jr index
+  alias tank d0
+  move nameCurrent HASH("Current O2 Moles")
+  move nameMinute HASH("Net O2 Gain Last Minute")
+  move nameDay HASH("Net O2 Gain Last Day")
+  move name20 HASH("Average O2 Moles 20 Days")
+  j ra  
+  alias tank d1
+  move nameCurrent HASH("Current N Moles")
+  move nameMinute HASH("Net N Gain Last Minute")
+  move nameDay HASH("Net N Gain Last Day")
+  move name20 HASH("Average N Moles 20 Days")
+  j ra
+  alias tank d2
+  move nameCurrent HASH("Current CO2 Moles")
+  move nameMinute HASH("Net CO2 Gain Last Minute")
+  move nameDay HASH("Net CO2 Gain Last Day")
+  move name20 HASH("Average CO2 Moles 20 Days")
+  j ra
+  alias tank d3
+  move nameCurrent HASH("Current Vol Moles")
+  move nameMinute HASH("Net Vol Gain Last Minute")
+  move nameDay HASH("Net Vol Gain Last Day")
+  move name20 HASH("Average Vol Moles 20 Days")
+  j ra
+  alias tank d4
+  move nameCurrent HASH("Current Fuel Moles")
+  move nameMinute HASH("Net Fuel Gain Last Minute")
+  move nameDay HASH("Net Fuel Gain Last Day")
+  move name20 HASH("Average Fuel Moles 20 Days")
+  j ra
+captureMinute:
+  mul index tankIndex 100
+  add sp index minute
+  l moles tank TotalMoles
+  push moles
+captureDay:
+  mul index tankIndex 100
+  add index index 20
+  add sp index day
+  push moles # already loaded from minute
+  j ra
+reportMetrics:
+  mul index tankIndex 100
+  add index index 1
+  add sp index minute
+  peek r1 # current minute
+  div r0 r1 1000
+  round r0 r0
+  sbn led nameCurrent Setting r0 # current moles
+  select r0 minute -1 19
+  add sp sp r0
+  peek r2 # previous minute
+  sub r0 r1 r2
+  div r0 r0 1000
+  round r0 r0
+  sbn led nameMinute Setting r0 # last minute
+  add sp index 20
+  add sp sp day
+  peek r1 # current day
+  select r0 day -1 19
+  add sp sp r0
+  peek r2 # previous day
+  sub r0 r1 r2
+  div r0 r0 1000
+  round r0 r0
+  sbn led nameDay Setting r0 # last day
+  add sp index 20
+  move r2 0
+  move totalIndex 0
+  move validDays 0
+countDays:
+  yield
+  peek r1
+  add r2 r2 r1
+  add sp sp 1
+  snez r3 r1
+  add validDays validDays r3
+  add totalIndex totalIndex 1
+  brgt totalIndex 19 2
+  j countDays
+  div r0 r2 validDays
+  div r0 r0 1000
+  round r0 r0
+  sbn led name20 Setting r0 # 20 day avg
+  j ra

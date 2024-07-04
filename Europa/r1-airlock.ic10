@@ -1,0 +1,75 @@
+alias sensor d0
+
+alias direction r15 # 0 = out
+alias pressure r14
+
+define intDoor HASH("Internal Hangar Door")
+define extDoor HASH("External Hangar Door")
+define doors HASH("StructureAirlockGate")
+define buttons HASH("StructureLogicButton")
+define intVent HASH("Internal Vent")
+define extVent HASH("External Vent")
+define vents HASH("StructurePoweredVent")
+
+define intPressure 80
+define extPressure 0
+
+init:
+  sb doors Open 0
+  sb vents On 0
+  sb vents Lock 1
+  
+main:
+  s db Setting 0
+  yield # wait for button press
+  lb r0 buttons Activate Maximum
+  bgtz r0 cycleAirlock
+j main
+
+cycleAirlock:
+  s db Setting 1
+  sb doors Open 0
+  jal waitForDoors
+  seqz direction direction # toggle direction
+  jal depressurize
+  yield
+  jal pressurize
+  yield
+  jal openDoor
+j main
+
+depressurize:
+  s db Setting 2
+  select r0 direction extVent intVent
+  sbn vents r0 Mode Vent.Inward
+  sbn vents r0 On 1
+  yield
+  l r0 sensor Pressure
+  brnez r0 -2
+  sb vents On 0
+j ra
+
+pressurize:
+  s db Setting 3
+  select r0 direction intVent extVent
+  select r1 direction intPressure extPressure
+  sbn vents r0 Mode Vent.Outward
+  sbn vents r0 On 1
+  yield
+  l r0 sensor Pressure
+  brle r0 r1 -2
+  sb vents On 0
+j ra
+
+openDoor:
+  s db Setting 4
+  select r0 direction intDoor extDoor
+  sbn doors r0 Open 1
+j ra
+
+waitForDoors:
+  s db Setting 5
+  yield
+  lb r0 doors Idle Minimum
+  breqz r0 -2
+j ra

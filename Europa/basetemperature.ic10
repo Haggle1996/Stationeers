@@ -1,0 +1,12 @@
+alias sensor d0
+alias valve d1
+alias target r15
+
+main:
+  yield
+  l r0 valve On
+  select target r0 295.15 293.15
+  l r0 sensor Temperature
+  slt r0 r0 target
+  s valve On r0
+j main

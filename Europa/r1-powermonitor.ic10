@@ -1,0 +1,107 @@
+# Displays information about batteries on network
+alias ratio r15     # % capacity
+alias actual r14    # consumed power
+alias charge r13    # total charge
+alias maximum r12   # total capacity
+alias potential r11 # generated power
+alias flow r10      # generated - consumed
+
+alias index r3      # loop index
+alias iterator r4   # loop iterator
+alias led r5        # current LED device
+alias name r6       # current device name
+alias mode r7       # mode setting
+alias setting r8    # setting to set
+alias color r9      # color to set
+
+define battery HASH("StructureBatteryLarge")
+define led1 HASH("StructureConsoleLED5")
+define led2 HASH("StructureConsoleLED1x2")
+define led3 HASH("StructureConsoleLED1x3")
+
+define ledRatio HASH("Battery Percent")
+define ledCapacity HASH("Battery Capacity")
+define ledActual HASH("Power Consumed")
+define ledPotential HASH("Power Generated")
+define ledFlow HASH("Net Power Surplus")
+
+main:
+yield
+
+getData:
+lb ratio battery Ratio Average
+lb actual battery PowerActual Average
+lb charge battery Charge Sum
+lb maximum battery Maximum Sum
+lb potential battery PowerPotential Average
+
+setData:
+move mode 1 # Percent  
+move name ledRatio     # % Battery
+move setting ratio  
+jal setLEDLoop
+move mode 2 # Watts
+move name ledActual    # Consumed
+move setting actual 
+jal setLEDLoop
+move name ledPotential # Generated
+move setting potential
+jal setLEDLoop
+move name ledFlow      # Flow
+sub setting potential actual
+jal setLEDLoop
+move name ledCapacity  # Capacity
+move setting maximum
+jal setLEDLoop
+j main
+
+setLEDLoop:
+push ra
+move iterator 0
+loop:
+jal updateLEDReference
+jal setLED
+add iterator iterator 1
+bgt iterator 3 loopEnd
+j loop
+loopEnd:
+pop ra
+j ra
+
+updateLEDReference:
+mul index iterator 2
+add index index 1
+jr index
+move led led1
+j updateLEDEnd
+move led led2
+j updateLEDEnd
+move led led3
+j updateLEDEnd
+updateLEDEnd:
+j ra
+
+setLED:
+sbn led name On 1
+sbn led name Mode mode
+sbn led name Setting setting
+beq name ledRatio setRatioColor
+sltz r0 setting
+select color r0 Color.Red Color.White
+j setLEDEnd
+setRatioColor:
+move color Color.Red
+s db Setting setting
+div r0 setting 0.199
+trunc r0 r0
+seq r1 r0 5
+select color r1 Color.Blue color
+seq r1 r0 4
+select color r1 Color.Green color
+seq r1 r0 3
+select color r1 Color.Yellow color
+seq r1 r0 2
+select color r1 Color.Orange color
+setLEDEnd:
+sbn led name Color color
+j ra

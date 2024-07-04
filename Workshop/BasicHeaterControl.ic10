@@ -1,0 +1,15 @@
+# basic heating/cooling script
+# swap line 10 targets for cooling
+# line 13 sgt if cooling
+alias sensor d0
+alias heater d1
+alias target r15
+
+main:
+  yield
+  l r0 heater On
+  select target r0 298.15 293.15
+  l r0 sensor Temperature
+  slt r0 r0 target
+  s heater On r0
+j main

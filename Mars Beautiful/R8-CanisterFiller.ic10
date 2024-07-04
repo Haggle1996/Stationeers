@@ -1,0 +1,89 @@
+alias pump0 d0
+alias pump1 d1
+alias pump2 d2
+alias tank1 d3
+alias tank2 d4
+alias tank3 d5
+
+alias currentPump d0
+alias currentTank d3
+
+alias index r15
+alias iterator r14
+alias isOccupied r13
+alias direction r12
+alias pressure r11
+
+main:
+  yield
+  move iterator 0
+loop:
+  jal updateDeviceRefs
+  jal doTank
+  jal doTank_cleanup
+  add iterator iterator 1
+  bgt iterator 2 loop_end
+  j loop
+loop_end:
+  j main
+
+doTank:
+  bdns currentPump ra
+  push ra
+  ls isOccupied currentTank 0 Occupied
+  beqz isOccupied doTank_end
+  l direction currentPump Mode # 0 = fill
+  beqz direction doTank_fill
+doTank_empty:
+  ls isOccupied currentTank 0 Occupied
+  beqz isOccupied doTank_end # recheck if removed  
+  ls pressure currentTank 0 Pressure
+  beqz pressure doTank_end
+  s currentPump Setting 100
+  s currentPump On 1
+  yield
+  j doTank_empty
+doTank_fill:
+  ls isOccupied currentTank 0 Occupied
+  beqz isOccupied doTank_end # recheck if removed  
+  ls pressure currentTank 0 Pressure
+  bge pressure 16000 doTank_end
+  s currentPump Setting 50
+  s currentPump On 1
+  yield
+  j doTank_fill
+doTank_end:
+  s currentPump On 0
+  pop ra
+  j ra
+
+doTank_cleanup:
+  bdns currentPump ra
+  ls isOccupied currentTank 0 Occupied
+  bnez isOccupied doTank_cleanup_end
+  l pressure currentTank Pressure
+  beqz pressure doTank_cleanup_end
+  s currentPump Mode 1
+  s currentPump Setting 100
+  s currentPump On 1
+  yield
+  j doTank_cleanup
+doTank_cleanup_end:
+  s currentPump On 0
+  j ra
+
+updateDeviceRefs:
+  mul index iterator 3
+  add index index 1
+  jr index
+  alias currentPump d0
+  alias currentTank d3
+  j update_end
+  alias currentPump d1
+  alias currentTank d4  
+  j update_end
+  alias currentPump d2
+  alias currentTank d5
+  j update_end
+update_end:
+  j ra

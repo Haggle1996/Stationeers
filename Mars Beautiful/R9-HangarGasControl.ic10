@@ -1,5 +1,6 @@
 alias sensor d0
 alias transmitter d1
+alias ac d2
 alias tank d3
 alias pump d4
 alias tankOutput d5
@@ -23,6 +24,7 @@ main:
   jal doHangarDoors
   jal doExternalVent
   jal doPump
+  jal doAC
 
   j main
 
@@ -42,11 +44,9 @@ doDoorClose:
 doExternalVent:
   # vent in gas when temp ideal
   push ra
-  #blt temperature 265 doVentOff # > -8C
-  #bgt temperature 273 doVentOff # < 0C
   bgt temperature 273.15 doVentOff
   l pressure tank Pressure
-  bgt pressure maxPressure doVentOff # < max pressure
+  bgt pressure maxPressure doVentOff # < max
   jal doPumpOff # override pump if on
   sbn vent name Mode Vent.Inward
   sbn vent name On 1
@@ -65,12 +65,24 @@ doPump:
   l r0 tank RatioPollutant
   bnez r0 doPumpOff # no pollutants
   l pressure tank Pressure
-  ble pressure minPressure doPumpOff # > min pressure
+  ble pressure minPressure doPumpOff # > min
   l pressure tankOutput Pressure
-  bgt pressure maxPressure doPumpOff # < max pressure
+  bgt pressure maxPressure doPumpOff # < max
   s pump Setting 10
   s pump On 1
   j ra
 doPumpOff:
   s pump On 0
+  j ra
+
+doAC:
+  # Only do -10C during day when output
+  # and output tank >= maxPressure
+  l color transmitter Setting
+  seq r0 color Color.White # day
+  l pressure tankOutput Pressure
+  sge r1 pressure maxPressure
+  and r0 r0 r1
+  select r0 r0 263.15 265.15
+  s ac Setting r0
   j ra
