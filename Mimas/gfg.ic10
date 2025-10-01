@@ -1,0 +1,11 @@
+alias gfg d0      # Generator
+alias sensor d1   # Gas sensor
+alias battery d2  # Battery
+alias rpr d3      # Room presreg
+alias rvp d4      # Room volpump
+alias fpr d5      # Fuel presreg
+
+main:
+  yield
+  s gfg On 1
+  j main

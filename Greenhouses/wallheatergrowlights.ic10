@@ -1,0 +1,25 @@
+# basic heating script + grow light control
+alias sensor d0
+alias heater d1
+alias daylight d2
+alias growlight d3
+alias target r15
+
+main:
+  yield
+  jal fDoHeater
+  jal fDoGrowLights
+j main
+
+fDoHeater:
+  l r0 heater On
+  select target r0 298.15 293.15
+  l r0 sensor Temperature
+  slt r0 r0 target
+  s heater On r0
+  j ra
+
+fDoGrowLights:
+  l r0 daylight Activate 
+  s growlight On r0
+  j ra

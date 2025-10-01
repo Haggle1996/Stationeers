@@ -1,0 +1,86 @@
+alias tank d0
+alias canister d1
+alias pump d2
+alias heater d3
+alias vent d4
+alias analyzer d5
+
+alias isOccupied r15
+alias direction r14
+alias pressure r13
+alias temperature r12
+alias target r11
+
+main:
+  yield
+  jal doTank
+  jal doTank_cleanup
+  jal doHeater
+  jal doFilling
+  j main
+
+doTank:
+  ls isOccupied canister 0 Occupied
+  beqz isOccupied doTank_end
+  l direction pump Mode # 0 = fill
+  beqz direction doTank_fill
+doTank_empty:
+  ls isOccupied canister 0 Occupied
+  beqz isOccupied doTank_end # recheck if removed  
+  ls pressure canister 0 Pressure
+  beqz pressure doTank_end
+  s pump Setting 100
+  s pump On 1
+  yield
+  j doTank_empty
+doTank_fill:
+  ls isOccupied canister 0 Occupied
+  beqz isOccupied doTank_end # recheck if removed  
+  ls pressure canister 0 Pressure
+  bge pressure 16000 doTank_end
+  s pump Setting 50
+  s pump On 1
+  yield
+  j doTank_fill
+doTank_end:
+  s pump On 0
+  j ra
+
+doTank_cleanup:
+  ls isOccupied canister 0 Occupied
+  bnez isOccupied doTank_cleanup_end
+  s analyzer On 1
+  l pressure analyzer Pressure
+  beqz pressure doTank_cleanup_end
+  s pump Mode 1
+  s pump Setting 100
+  s pump On 1
+  yield
+  j doTank_cleanup
+doTank_cleanup_end:
+  s pump On 0
+  j ra
+
+doHeater:
+  l r0 heater On
+  select target r0 293.15 283.15
+  l temperature tank Temperature
+  slt r0 r0 target
+  s heater On r0
+  j ra
+
+doFilling:
+  s vent Mode Vent.Inward
+doFilling_fill:
+  l r0 vent On
+  select target r0 273.15 283.15
+  l temperature tank Temperature # below freezing, do not fill
+  blt temperature target doFilling_end
+  l pressure tank Pressure
+  bgt pressure 6000 doFilling_end # tank full
+  s vent On 1
+  yield
+  j doFilling_fill
+doFilling_end:
+  s vent On 0
+  j ra
